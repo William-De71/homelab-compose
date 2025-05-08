@@ -1,8 +1,12 @@
-# DOCKER COMPOSE
+# HomeLab & personnal Compose
 
 Fichier docker-compose pour mon utilisation personnel
 
-## Installation
+## Contenu
+
+- <a href="nextcloud"><img src="https://avatars.githubusercontent.com/u/19211038?s=200&v=4" alt="nextcloud" height="30" align="top"/></a> [`Nextcloud`](nextcloud) - Application Nextcloud avec base de donnée MariaDB, Redis et serveur web Caddy.
+
+## Prérequis
 
 ### Installation de Docker
 

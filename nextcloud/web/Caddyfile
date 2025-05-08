@@ -1,0 +1,85 @@
+{
+    servers :443 {
+        protocols h1 h2 h2c
+    }
+}
+
+nextcloud.local.lan {
+    @allowed remote_ip 192.168.0.0/24
+
+    request_body {
+        max_size 10G
+    }
+
+    # Enable gzip but do not remove ETag headers
+    encode {
+        zstd
+        gzip 4
+
+        minimum_length 256
+
+        match {
+            header Content-Type application/atom+xml
+            header Content-Type application/javascript
+            header Content-Type application/json
+            header Content-Type application/ld+json
+            header Content-Type application/manifest+json
+            header Content-Type application/rss+xml
+            header Content-Type application/vnd.geo+json
+            header Content-Type application/vnd.ms-fontobject
+            header Content-Type application/wasm
+            header Content-Type application/x-font-ttf
+            header Content-Type application/x-web-app-manifest+json
+            header Content-Type application/xhtml+xml
+            header Content-Type application/xml
+            header Content-Type font/opentype
+            header Content-Type image/bmp
+            header Content-Type image/svg+xml
+            header Content-Type image/x-icon
+            header Content-Type text/cache-manifest
+            header Content-Type text/css
+            header Content-Type text/plain
+            header Content-Type text/vcard
+            header Content-Type text/vnd.rim.location.xloc
+            header Content-Type text/vtt
+            header Content-Type text/x-component
+            header Content-Type text/x-cross-domain-policy
+        }
+    }
+
+    reverse_proxy app:80 {
+    	header_up X-Forwarded-Proto {scheme}
+    	header_up X-Forwarded-For {remote_host}
+    }
+
+    header {
+        # Based on following source:
+        # https://raw.githubusercontent.com/nextcloud/docker/refs/heads/master/.examples/docker-compose/insecure/mariadb/fpm/web/nginx.conf
+        #
+        # HSTS settings
+        # WARNING: Only add the preload option once you read about
+        # the consequences in https://hstspreload.org/. This option
+        # will add the domain to a hardcoded list that is shipped
+        # in all major browsers and getting removed from this list
+        # could take several months.
+        # Strict-Transport-Security "max-age=15768000; includeSubDomains; preload"
+
+        # HTTP response headers borrowed from Nextcloud `.htaccess`
+        #Referrer-Policy "no-referrer"
+        #X-Content-Type-Options "nosniff"
+        #X-Download-Options "noopen"
+        #X-Frame-Options "SAMEORIGIN"
+        #X-Permitted-Cross-Domain-Policies "none"
+        #X-Robots-Tag "noindex,nofollow"
+        #X-XSS-Protection "1; mode=block"
+
+        #Permissions-Policy "accelerometer=(), ambient-light-sensor=(), autoplay=(), battery=(), camera=(), cross-origin-isolated=(), display-capture=(), document-domain=(), encrypted-media=(), execution-while-not-rendered=(), execution-while-out-of-viewport=(), fullscreen=(), geolocation=(), gyroscope=(), keyboard-map=(), magnetometer=(), microphone=(), midi=(), navigation-override=(), payment=(), picture-in-picture=(), publickey-credentials-get=(), screen-wake-lock=(), sync-xhr=(), usb=(), web-share=(), xr-spatial-tracking=()"
+
+        # Types MIME manquants
+        Content-Type .mjs application/javascript
+        Content-Type .otf font/otf
+        Content-Type .wasm application/wasm
+    }
+
+    tls internal
+}
