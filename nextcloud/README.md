@@ -263,7 +263,7 @@ $ vim ${DOCKER_PROJECT_DIR}/nextcloud/config-inject.sh
 
 <details>
   <summary>Fichier de configuration config-inject.sh</summary>
-  <pre>
+  
   ```bash
   #!/bin/bash
   set -e
@@ -340,7 +340,6 @@ $ vim ${DOCKER_PROJECT_DIR}/nextcloud/config-inject.sh
     rm "$TMP_FILE"
   fi
   ```
-  </pre>
 </details>
 
 Ne pas oublié de rendre le script exécutable:
@@ -359,173 +358,174 @@ $ vim ${DOCKER_PROJECT_DIR}/nextcloud/docker-compose.yml
 
 <details>
 	<summary>Nextcloud docker-compose.yml</summary>
-  <pre>
+
   ```yaml
-  networks:
-    local:
-      driver: bridge
 
-  secrets:
-    nextcloud_admin_password:
-      file: ./secrets/nextcloud_admin_password     # put admin password in this file
-    nextcloud_admin_user:
-      file: ./secrets/nextcloud_admin_user         # put admin username in this file
-    db_name:
-      file: ./secrets/db_name                      # put mysql db name in this file
-    db_user:
-      file: ./secrets/db_user                      # put mysql username in this file
-    db_root_password:
-      file: ./secrets/db_root_password             # put mysql db name in this file
-    db_user_password:
-      file: ./secrets/db_user_password             # put nextcloud db password in this file
-    smtp_user_password:
-      file: ./secrets/smtp_user_password           # put smtp password in this file
-    redis_password:
-      file: ./secrets/redis_password               # put redis password in this file
+    networks:
+      local:
+        driver: bridge
 
-  services:
-    web:
-      image: caddy:${CADDY_VERSION}
-      pull_policy: always
-      user: ${UID}:${GID}
-      ports:
-        - "80:80"
-        - "443:443"
-      environment:
-        - CADDY_INGRESS_NETWORKS=local
-      volumes:
-        - /var/run/docker.sock:/var/run/docker.sock
-        - ./web/Caddyfile:/etc/caddy/Caddyfile
-        - ./web/data:/data
-        - ./web/config:/config
-        - ./web/certs:/etc/caddy/certs
-        - /etc/localtime:/etc/localtime:ro
-        - /etc/timezone:/etc/timezone:ro
-      depends_on:
-        - app
-      restart: unless-stopped
-        condition: service_healthy
-      logging:
-        options:
-          max-size: ${DOCKER_LOGGING_MAX_SIZE:?DOCKER_LOGGING_MAX_SIZE not set}
-          max-file: ${DOCKER_LOGGING_MAX_FILE:?DOCKER_LOGGING_MAX_FILE not set}
-      healthcheck:
-        test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "127.0.0.1:2019/metrics"]
-        interval: 10s
-        retries: 3
-        start_period: 5s
-        timeout: 5s
-      networks:
-        - local
+    secrets:
+      nextcloud_admin_password:
+        file: ./secrets/nextcloud_admin_password     # put admin password in this file
+      nextcloud_admin_user:
+        file: ./secrets/nextcloud_admin_user         # put admin username in this file
+      db_name:
+        file: ./secrets/db_name                      # put mysql db name in this file
+      db_user:
+        file: ./secrets/db_user                      # put mysql username in this file
+      db_root_password:
+        file: ./secrets/db_root_password             # put mysql db name in this file
+      db_user_password:
+        file: ./secrets/db_user_password             # put nextcloud db password in this file
+      smtp_user_password:
+        file: ./secrets/smtp_user_password           # put smtp password in this file
+      redis_password:
+        file: ./secrets/redis_password               # put redis password in this file
 
-    app:
-      image: nextcloud:${NEXTCLOUD_VERSION}
-      user: ${UID}:${GID}
-      ports:
-        - "8080:80"
-      env_file:
-        - ./nextcloud.env
-      secrets:
-        - db_name
-        - db_user
-        - db_user_password
-        - nextcloud_admin_user
-        - nextcloud_admin_password
-        - smtp_user_password
-        - redis_password
-      volumes:
-        - ./nextcloud:/var/www/html
-        - ./apps:/var/www/html/custom_apps
-        # if another location is not desired for data:
-        # ./data:/var/www/html/data
-        - ${DH_DATA_DIR}:${NC_DATA_DIR}
-        - ./config:/var/www/html/config
-        - ./web/caddy_root.crt:/usr/local/share/ca-certificates/caddy_root.crt:ro
-        - ./redis/redis-session.ini:/usr/local/etc/php/conf.d/redis-session.ini
-        - ./config-inject.sh:/docker-entrypoint-init.d/config-inject.sh
-        - /etc/localtime:/etc/localtime:ro
-        - /etc/timezone:/etc/timezone:ro
-      depends_on:
-        db:
+    services:
+
+      web:
+        image: caddy:${CADDY_VERSION}
+        pull_policy: always
+        user: ${UID}:${GID}
+        ports:
+          - "80:80"
+          - "443:443"
+        environment:
+          - CADDY_INGRESS_NETWORKS=local
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
+          - ./web/Caddyfile:/etc/caddy/Caddyfile
+          - ./web/data:/data
+          - ./web/config:/config
+          - ./web/certs:/etc/caddy/certs
+          - /etc/localtime:/etc/localtime:ro
+          - /etc/timezone:/etc/timezone:ro
+        depends_on:
+          - app
+        restart: unless-stopped
           condition: service_healthy
-        redis:
-          condition: service_healthy
-      restart: unless-stopped
-      healthcheck:
-        test: ["CMD", "curl", "-f", "http://localhost/status.php"]
-        interval: 30s
-        timeout: 5s
-        retries: 5
-      networks:
-        - local
+        logging:
+          options:
+            max-size: ${DOCKER_LOGGING_MAX_SIZE:?DOCKER_LOGGING_MAX_SIZE not set}
+            max-file: ${DOCKER_LOGGING_MAX_FILE:?DOCKER_LOGGING_MAX_FILE not set}
+        healthcheck:
+          test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "127.0.0.1:2019/metrics"]
+          interval: 10s
+          retries: 3
+          start_period: 5s
+          timeout: 5s
+        networks:
+          - local
+    
+      app:
+        image: nextcloud:${NEXTCLOUD_VERSION}
+        user: ${UID}:${GID}
+        ports:
+          - "8080:80"
+        env_file:
+          - ./nextcloud.env
+        secrets:
+          - db_name
+          - db_user
+          - db_user_password
+          - nextcloud_admin_user
+          - nextcloud_admin_password
+          - smtp_user_password
+          - redis_password
+        volumes:
+          - ./nextcloud:/var/www/html
+          - ./apps:/var/www/html/custom_apps
+          # if another location is not desired for data:
+          # ./data:/var/www/html/data
+          - ${DH_DATA_DIR}:${NC_DATA_DIR}
+          - ./config:/var/www/html/config
+          - ./web/caddy_root.crt:/usr/local/share/ca-certificates/caddy_root.crt:ro
+          - ./redis/redis-session.ini:/usr/local/etc/php/conf.d/redis-session.ini
+          - ./config-inject.sh:/docker-entrypoint-init.d/config-inject.sh
+          - /etc/localtime:/etc/localtime:ro
+          - /etc/timezone:/etc/timezone:ro
+        depends_on:
+          db:
+            condition: service_healthy
+          redis:
+            condition: service_healthy
+        restart: unless-stopped
+        healthcheck:
+          test: ["CMD", "curl", "-f", "http://localhost/status.php"]
+          interval: 30s
+          timeout: 5s
+          retries: 5
+        networks:
+          - local
 
-    db:
-      image: mariadb:${MARIADB_VERSION}
-      user: ${UID}:${GID}
-      environment:
-        - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/db_root_password
-        - MYSQL_PASSWORD_FILE=/run/secrets/db_user_password
-        - MYSQL_DATABASE_FILE=/run/secrets/db_name
-        - MYSQL_USER_FILE=/run/secrets/db_user
-      secrets:
-        - db_root_password
-        - db_user_password
-        - db_name
-        - db_user
-      volumes:
-        - ./db:/var/lib/mysql
-        - /etc/localtime:/etc/localtime:ro
-        - /etc/timezone:/etc/timezone:ro
-      healthcheck:
-        test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
-        interval: 30s
-        timeout: 5s
-        retries: 3
-        start_period: 20s
-      restart: unless-stopped
-      networks:
-        - local
+      db:
+        image: mariadb:${MARIADB_VERSION}
+        user: ${UID}:${GID}
+        environment:
+          - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/db_root_password
+          - MYSQL_PASSWORD_FILE=/run/secrets/db_user_password
+          - MYSQL_DATABASE_FILE=/run/secrets/db_name
+          - MYSQL_USER_FILE=/run/secrets/db_user
+        secrets:
+          - db_root_password
+          - db_user_password
+          - db_name
+          - db_user
+        volumes:
+          - ./db:/var/lib/mysql
+          - /etc/localtime:/etc/localtime:ro
+          - /etc/timezone:/etc/timezone:ro
+        healthcheck:
+          test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
+          interval: 30s
+          timeout: 5s
+          retries: 3
+          start_period: 20s
+        restart: unless-stopped
+        networks:
+          - local
 
-    redis:
-      image: redis:${REDIS_VERSION}
-      user: ${UID}:${GID}
-      command: bash -c 'redis-server --requirepass "$$(cat /run/secrets/redis_password)"'
-      secrets:
-        - redis_password
-      volumes:
-        - ./redis:/data
-      healthcheck:
-        test: ["CMD-SHELL", "redis-cli --no-auth-warning -a \"$$(cat /run/secrets/redis_password)\" ping | grep PONG"]
-        start_period: 10s
-        interval: 30s
-        retries: 3
-        timeout: 5s
-      restart: unless-stopped
-      networks:
-        - local
+      redis:
+        image: redis:${REDIS_VERSION}
+        user: ${UID}:${GID}
+        command: bash -c 'redis-server --requirepass "$$(cat /run/secrets/redis_password)"'
+        secrets:
+          - redis_password
+        volumes:
+          - ./redis:/data
+        healthcheck:
+          test: ["CMD-SHELL", "redis-cli --no-auth-warning -a \"$$(cat /run/secrets/redis_password)\" ping | grep PONG"]
+          start_period: 10s
+          interval: 30s
+          retries: 3
+          timeout: 5s
+        restart: unless-stopped
+        networks:
+          - local
 
-    # notify_push: TODO
-    # image: nextcloud:${NEXTCLOUD_VERSION}
-    # restart: unless-stopped
-    # user: ${UID}:${GID}
-    # depends_on:
-    #   - web
-    # environment:
-    #   - PORT=7867
-    #   - NEXTCLOUD_URL=http://web
-    # volumes:
-    #   - ./nextcloud:/var/www/html:ro
-    #   - ./apps:/var/www/html/custom_apps:ro
-    #   - ./config:/var/www/html/config:ro
-    #   - /etc/localtime:/etc/localtime:ro
-    #   - /etc/timezone:/etc/timezone:ro
-    # entrypoint: /var/www/html/custom_apps/notify_push/bin/x86_64/notify_push /var/www/html/config/config.php
-    # networks:
-    #   - local
+      # notify_push: TODO
+      # image: nextcloud:${NEXTCLOUD_VERSION}
+      # restart: unless-stopped
+      # user: ${UID}:${GID}
+      # depends_on:
+      #   - web
+      # environment:
+      #   - PORT=7867
+      #   - NEXTCLOUD_URL=http://web
+      # volumes:
+      #   - ./nextcloud:/var/www/html:ro
+      #   - ./apps:/var/www/html/custom_apps:ro
+      #   - ./config:/var/www/html/config:ro
+      #   - /etc/localtime:/etc/localtime:ro
+      #   - /etc/timezone:/etc/timezone:ro
+      # entrypoint: /var/www/html/custom_apps/notify_push/bin/x86_64/notify_push /var/www/html/config/config.php
+      # networks:
+      #   - local
 
-    # imaginary: TODO
+      # imaginary: TODO
   ```
-  </pre>
 </details>
 
 ---
@@ -573,7 +573,7 @@ $ vim ${DOCKER_PROJECT_DIR}/nextcloud/start.sh
 
 <details>
   <summary>Script de démarrage start.sh</summary>
-  <pre>
+
   ```bash
   #!/bin/bash
 
@@ -658,7 +658,6 @@ $ vim ${DOCKER_PROJECT_DIR}/nextcloud/start.sh
     echo "🎉 Nextcloud est prêt et accessible en HTTPS local sur https://nextcloud.local.lan." || \
     echo "⚠️ Problème d'accès à Nextcloud. Vérifiez les logs."
   ```
-  </pre>
 </details>
 
 Rendre le script exécutable avec la commande:
@@ -693,7 +692,7 @@ $ vim ${DOCKER_PROJECT_DIR}/nextcloud/backup.sh
 
 <details>
   <summary>Script de sauvegarde backup.sh</summary>
-  <pre>
+
   ```bash
   #!/bin/bash
 
@@ -713,7 +712,6 @@ $ vim ${DOCKER_PROJECT_DIR}/nextcloud/backup.sh
   # Garder les 7 derniers backups
   ls -dt ./backups/* | tail -n +8 | xargs rm -rf
   ```
-  </pre>
 </details>
 
 Rendre le script exécutable avec la commande:
@@ -742,7 +740,7 @@ $ vim ${DOCKER_PROJECT_DIR}/nextcloud/restore.sh
 
 <details>
   <summary>Script de restauration restore.sh</summary>
-  <pre>
+
   ```bash
   #!/bin/bash
 
@@ -774,7 +772,6 @@ $ vim ${DOCKER_PROJECT_DIR}/nextcloud/restore.sh
 
   docker compose up -d
   ```
-  </pre>
 </details>
 
 Rendre le script exécutable avec la commande:
@@ -803,7 +800,7 @@ $ vim ${DOCKER_PROJECT_DIR}/nextcloud/maintenance.sh
 
 <details>
   <summary>Script de maintenance maintenance.sh</summary>
-  <pre>
+
   ```bash
   #!/bin/bash
 
@@ -823,7 +820,6 @@ $ vim ${DOCKER_PROJECT_DIR}/nextcloud/maintenance.sh
 
   sudo docker exec nextcloud-app-1 php occ maintenance:mode --off
   ```
-  </pre>
 </details>
 
 Rendre le script exécutable avec la commande:
